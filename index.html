@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>E-Ledger Input System</title>
-  <link rel="icon" type="image/png" href="https://avatars.githubusercontent.com/u/124555450?s=48&v=4">
+  <link rel="icon" type="image/png" href="https://avatars.githubusercontent.com/u/124555450?v=4">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -197,7 +197,7 @@
   </div><!-- Running Text Bar -->
   <div class="running-text-container">
    <div class="running-text">
-    ✨ Ledger Digital _ By Ipoel ✨ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 📚 E-Ledger Input System - SMK Negeri 4 Jakarta &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🎓 Tahun Pelajaran 2025/2026 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 💡 Kelola Nilai Siswa dengan Mudah dan Efisien &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ✨ Ledger Digital _ By Ipoel ✨ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 📚 E-Ledger Input System - SMK Negeri 4 Jakarta &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🎓 Tahun Pelajaran 2025/2026;
+    ✨ Ledger Digital _ By Ipoel ✨ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 📚 E-Ledger Input System - SMK Negeri 4 Jakarta &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🎓 Tahun Pelajaran 2025/2026 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 💡 Kelola Nilai Siswa dengan Mudah dan Efisien &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ✨ Ledger Digital _ By Ipoel ✨ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 📚 E-Ledger Input System - SMK Negeri 4 Jakarta &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
    </div>
   </div>
   <div id="app" class="h-full w-full overflow-auto" style="padding-bottom: 50px;"><!-- Dashboard View -->
@@ -643,6 +643,9 @@
                 return;
             }
             
+            // Sort students alphabetically by name
+            students.sort((a, b) => a.student_name.localeCompare(b.student_name, 'id'));
+            
             tbody.innerHTML = students.map((student, index) => {
                 const sums = [
                     student.sum1 || 0, student.sum2 || 0, student.sum3 || 0,
@@ -987,5 +990,5 @@
         // Initialize app on load
         initApp();
     </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ab0bf1f0551582b',t:'MTc2NTI0MzkyNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ab0d58977dfbd94',t:'MTc2NTI0NDg0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
