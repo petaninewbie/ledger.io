@@ -3,7 +3,7 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>E-Rapor Input System</title>
+  <title>Ledger Digital _ By Ipoel</title>
   <link rel="icon" type="image/png" href="https://github.com/petaninewbie/ledger.io/blob/main/LOGO%203D.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -109,8 +109,8 @@
    <div id="dashboardView" class="min-h-full p-8">
     <div class="max-w-7xl mx-auto">
      <div class="text-center mb-12">
-      <h1 class="text-5xl font-bold text-gray-800 mb-4">E-Rapor Input System</h1>
-      <p class="text-xl text-gray-600">SMK Negeri 1 Jakarta • Tahun Pelajaran 2023/2024</p>
+      <h1 class="text-5xl font-bold text-gray-800 mb-4">E-Ledger</h1>
+      <p class="text-xl text-gray-600">SMK Negeri 4 Jakarta • Tahun Pelajaran 2025/2026</p>
      </div>
      <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
       <h2 class="text-2xl font-bold text-gray-800 mb-6">📚 Tambah Kelas Baru</h2>
@@ -434,13 +434,18 @@
                 const studentCount = allData.filter(d => d.class_id === classId).length;
                 
                 return `
-                    <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
-                         onclick="openClass('${classId}')">
-                        <h3 class="text-xl font-bold mb-2">${meta.name}</h3>
-                        <p class="text-blue-100 text-sm mb-4">${meta.subject}</p>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm opacity-90">👥 ${studentCount} siswa</span>
-                            <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-xs font-semibold">Buka →</span>
+                    <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow relative">
+                        <button onclick="deleteClass('${classId}'); event.stopPropagation();" 
+                            class="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full font-bold transition-colors z-10">
+                            ✕
+                        </button>
+                        <div onclick="openClass('${classId}')" class="cursor-pointer">
+                            <h3 class="text-xl font-bold mb-2 pr-8">${meta.name}</h3>
+                            <p class="text-blue-100 text-sm mb-4">${meta.subject}</p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm opacity-90">👥 ${studentCount} siswa</span>
+                                <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-xs font-semibold">Buka →</span>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -461,6 +466,69 @@
             saveSession();
             
             renderGradesTable();
+        };
+        
+        window.deleteClass = async function(classId) {
+            const meta = classMetadata[classId];
+            if (!meta) return;
+            
+            const studentsInClass = allData.filter(d => d.class_id === classId);
+            
+            const confirmDelete = document.createElement('div');
+            confirmDelete.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            confirmDelete.innerHTML = `
+                <div class="bg-white rounded-xl p-6 max-w-md mx-4">
+                    <h3 class="text-lg font-bold mb-2 text-gray-800">Konfirmasi Hapus Kelas</h3>
+                    <p class="text-gray-600 mb-2">Yakin ingin menghapus kelas <strong>${meta.name}</strong>?</p>
+                    ${studentsInClass.length > 0 ? `<p class="text-red-600 text-sm mb-4">⚠️ Semua data ${studentsInClass.length} siswa dalam kelas ini akan ikut terhapus!</p>` : '<p class="text-gray-500 text-sm mb-4">Kelas ini tidak memiliki data siswa.</p>'}
+                    <div class="flex gap-3">
+                        <button id="cancelDeleteClass" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded font-semibold transition-colors">Batal</button>
+                        <button id="confirmDeleteClass" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded font-semibold transition-colors">Hapus Kelas</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(confirmDelete);
+            
+            document.getElementById('cancelDeleteClass').onclick = () => confirmDelete.remove();
+            document.getElementById('confirmDeleteClass').onclick = async () => {
+                const btn = document.getElementById('confirmDeleteClass');
+                btn.disabled = true;
+                btn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+                
+                try {
+                    // Delete all students in the class
+                    if (studentsInClass.length > 0) {
+                        const studentIds = studentsInClass.map(s => s.id);
+                        const { error } = await supabase
+                            .from('student_grades')
+                            .delete()
+                            .in('id', studentIds);
+                        
+                        if (error) throw error;
+                        
+                        // Remove from local data
+                        allData = allData.filter(d => d.class_id !== classId);
+                    }
+                    
+                    // Delete class metadata
+                    delete classMetadata[classId];
+                    saveClassMetadata();
+                    
+                    // Clear session if current class is deleted
+                    if (currentClassId === classId) {
+                        clearSession();
+                        currentClassId = null;
+                    }
+                    
+                    confirmDelete.remove();
+                    showToast(`Kelas ${meta.name} berhasil dihapus!`, "success");
+                    renderClassList();
+                } catch (error) {
+                    console.error('Error deleting class:', error);
+                    confirmDelete.remove();
+                    showToast("Gagal menghapus kelas: " + error.message, "error");
+                }
+            };
         };
         
         function renderGradesTable() {
@@ -822,5 +890,5 @@
         // Initialize app on load
         initApp();
     </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ab088555236b5ab',t:'MTc2NTI0MTY4MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ab08e5280b4b5ab',t:'MTc2NTI0MTkyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
