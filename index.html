@@ -257,6 +257,37 @@
         function saveClassMetadata() {
             localStorage.setItem('classMetadata', JSON.stringify(classMetadata));
         }
+
+        
+        
+        // Session Management
+        function saveSession() {
+            const sessionData = {
+                currentClassId: currentClassId,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('appSession', JSON.stringify(sessionData));
+        }
+        
+        function loadSession() {
+            const saved = localStorage.getItem('appSession');
+            if (saved) {
+                try {
+                    const sessionData = JSON.parse(saved);
+                    // Session valid for 24 hours
+                    if (Date.now() - sessionData.timestamp < 24 * 60 * 60 * 1000) {
+                        return sessionData.currentClassId;
+                    }
+                } catch (e) {
+                    console.error('Error loading session:', e);
+                }
+            }
+            return null;
+        }
+        
+        function clearSession() {
+            localStorage.removeItem('appSession');
+        }
         
         function showLoading() {
             document.getElementById('loadingOverlay').classList.remove('hidden');
