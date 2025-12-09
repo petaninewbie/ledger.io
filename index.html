@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>E-Rapor Input System</title>
-  <link rel="icon" type="image/png" href="https://imgur.com/a/R4ouUdN">
+  <link rel="icon" type="image/png" href="https://i.imgur.com/MXQMWGM.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -109,8 +109,8 @@
    <div id="dashboardView" class="min-h-full p-8">
     <div class="max-w-7xl mx-auto">
      <div class="text-center mb-12">
-      <h1 class="text-5xl font-bold text-gray-800 mb-4">Ledger Digital</h1>
-      <p class="text-xl text-gray-600">SMK Negeri 4 Jakarta • Tahun Pelajaran 2025/2026</p>
+      <h1 class="text-5xl font-bold text-gray-800 mb-4">E-Rapor Input System</h1>
+      <p class="text-xl text-gray-600">SMK Negeri 1 Jakarta • Tahun Pelajaran 2023/2024</p>
      </div>
      <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
       <h2 class="text-2xl font-bold text-gray-800 mb-6">📚 Tambah Kelas Baru</h2>
@@ -136,7 +136,7 @@
    <div id="inputView" class="hidden min-h-full">
     <div class="bg-white shadow-lg sticky-header">
      <div class="max-w-full mx-auto px-8 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-4"><button id="backBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors"> 🔙 Kembali </button>
+      <div class="flex items-center gap-4"><button id="backBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors"> �� Kembali </button>
        <div>
         <h2 id="currentClassName" class="text-2xl font-bold text-gray-800"></h2>
         <p id="currentSubject" class="text-sm text-gray-600"></p>
@@ -258,165 +258,34 @@
             localStorage.setItem('classMetadata', JSON.stringify(classMetadata));
         }
         
-       // Session Management Configuration
-        const SESSION_CONFIG = {
-            SESSION_DURATION: 24 * 60 * 60 * 1000,    // 24 jam
-            WARNING_TIME: 30 * 60 * 1000,             // Warning 30 menit sebelum expired
-            ACTIVITY_EXTEND: 5 * 60 * 1000,           // Extend setiap 5 menit aktivitas
-            HEARTBEAT_INTERVAL: 60 * 1000,            // Cek session setiap 1 menit
-            IDLE_TIMEOUT: 2 * 60 * 60 * 1000,         // Idle timeout 2 jam
-            MAX_CONCURRENT_SESSIONS: 3,               // Max 3 session bersamaan
-            STORAGE_KEY: 'jurnal_digital_session',    // Key untuk localStorage
-            WARNING_MODAL_ID: 'sessionWarningModal',  // ID modal warning
-            INFO_MODAL_ID: 'sessionInfoModal'         // ID modal info session
-        };
-
-        // Session management helpers
-// Paste this right after the `const SESSION_CONFIG = { ... }` declaration.
-
-function getStorageKey() {
-    return SESSION_CONFIG && SESSION_CONFIG.STORAGE_KEY ? SESSION_CONFIG.STORAGE_KEY : 'jurnal_digital_session';
-}
-
-function nowMs() {
-    return Date.now();
-}
-
-function setSession(user) {
-    if (!user) return;
-    const session = {
-        user,
-        createdAt: nowMs(),
-        expiresAt: nowMs() + (SESSION_CONFIG.SESSION_DURATION || (24 * 60 * 60 * 1000))
-    };
-    try {
-        localStorage.setItem(getStorageKey(), JSON.stringify(session));
-    } catch (e) {
-        console.warn('Gagal menyimpan session ke localStorage', e);
-    }
-    // update globals
-    currentUser = user;
-    startSessionManager();
-}
-
-function clearSession() {
-    try {
-        localStorage.removeItem(getStorageKey());
-    } catch (e) {
-        console.warn('Gagal menghapus session dari localStorage', e);
-    }
-    currentUser = null;
-    stopSessionManager();
-}
-
-function restoreSession() {
-    try {
-        const raw = localStorage.getItem(getStorageKey());
-        if (!raw) return false;
-        const session = JSON.parse(raw);
-        if (!session || !session.user || !session.expiresAt) return false;
-        if (nowMs() > session.expiresAt) {
-            // expired
-            clearSession();
-            return false;
+        // Session Management
+        function saveSession() {
+            const sessionData = {
+                currentClassId: currentClassId,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('appSession', JSON.stringify(sessionData));
         }
-        currentUser = session.user;
-        // keep the expiry but we can extend on activity
-        startSessionManager();
-        return true;
-    } catch (e) {
-        console.warn('Gagal merestore session:', e);
-        return false;
-    }
-}
-
-let _sessionHeartbeat = null;
-let _sessionActivityHandler = null;
-let _sessionWarningTimeout = null;
-
-function startSessionManager() {
-    stopSessionManager(); // ensure no duplicates
-    // heartbeat: check every HEARTBEAT_INTERVAL whether session expired
-    const interval = SESSION_CONFIG.HEARTBEAT_INTERVAL || 60 * 1000;
-    _sessionHeartbeat = setInterval(() => {
-        try {
-            const raw = localStorage.getItem(getStorageKey());
-            if (!raw) {
-                // session was removed by another tab
-                handleSessionExpired();
-                return;
+        
+        function loadSession() {
+            const saved = localStorage.getItem('appSession');
+            if (saved) {
+                try {
+                    const sessionData = JSON.parse(saved);
+                    // Session valid for 24 hours
+                    if (Date.now() - sessionData.timestamp < 24 * 60 * 60 * 1000) {
+                        return sessionData.currentClassId;
+                    }
+                } catch (e) {
+                    console.error('Error loading session:', e);
+                }
             }
-            const session = JSON.parse(raw);
-            if (!session || !session.expiresAt) {
-                handleSessionExpired();
-                return;
-            }
-            const remain = session.expiresAt - nowMs();
-            // if less than WARNING_TIME and warning not shown -> show toast
-            if (!session._warned && remain > 0 && remain <= (SESSION_CONFIG.WARNING_TIME || (30 * 60 * 1000))) {
-                showToast('Sesi Anda akan berakhir dalam beberapa menit. Lakukan aktivitas untuk memperpanjang sesi.', 'info');
-                session._warned = true;
-                localStorage.setItem(getStorageKey(), JSON.stringify(session));
-            }
-            if (remain <= 0) {
-                handleSessionExpired();
-            }
-        } catch (e) {
-            console.error('Session heartbeat error', e);
+            return null;
         }
-    }, interval);
-
-    // activity listeners to extend session
-    _sessionActivityHandler = () => extendSessionOnActivity();
-    ['click', 'keydown', 'mousemove', 'touchstart'].forEach(ev => window.addEventListener(ev, _sessionActivityHandler, { passive: true }));
-}
-
-function stopSessionManager() {
-    if (_sessionHeartbeat) {
-        clearInterval(_sessionHeartbeat);
-        _sessionHeartbeat = null;
-    }
-    if (_sessionActivityHandler) {
-        ['click', 'keydown', 'mousemove', 'touchstart'].forEach(ev => window.removeEventListener(ev, _sessionActivityHandler));
-        _sessionActivityHandler = null;
-    }
-    if (_sessionWarningTimeout) {
-        clearTimeout(_sessionWarningTimeout);
-        _sessionWarningTimeout = null;
-    }
-}
-
-function extendSessionOnActivity() {
-    try {
-        const raw = localStorage.getItem(getStorageKey());
-        if (!raw) return;
-        const session = JSON.parse(raw);
-        if (!session) return;
-        // Extend only if session still valid
-        if (nowMs() < session.expiresAt) {
-            session.expiresAt = nowMs() + (SESSION_CONFIG.SESSION_DURATION || (24 * 60 * 60 * 1000));
-            session._warned = false;
-            localStorage.setItem(getStorageKey(), JSON.stringify(session));
+        
+        function clearSession() {
+            localStorage.removeItem('appSession');
         }
-    } catch (e) {
-        console.warn('Failed to extend session', e);
-    }
-}
-
-function handleSessionExpired() {
-    // clear session and redirect to login page (UI)
-    clearSession();
-    showToast('Session telah berakhir. Silakan login kembali.', 'error');
-    // force UI to login page
-    try {
-        document.getElementById('adminDashboard').style.display = 'none';
-        document.getElementById('teacherDashboard').style.display = 'none';
-        document.getElementById('studentDashboard').style.display = 'none';
-        document.getElementById('loginPage').style.display = 'block';
-        // clear currentUser and possibly reload
-        currentUser = null;
-    } catch (e) { /* ignore UI errors */ }
-}
         
         function showLoading() {
             document.getElementById('loadingOverlay').classList.remove('hidden');
@@ -458,19 +327,17 @@ function handleSessionExpired() {
             const savedClassId = loadSession();
             if (savedClassId && classMetadata[savedClassId]) {
                 currentClassId = savedClassId;
-            }
-            
-            await loadAllData();
-            setupEventListeners();
-            
-            // Show appropriate view based on session
-            if (currentClassId) {
+                
+                // Set UI immediately before loading data
                 const meta = classMetadata[currentClassId];
                 document.getElementById('currentClassName').textContent = meta.name;
                 document.getElementById('currentSubject').textContent = meta.subject;
                 document.getElementById('dashboardView').classList.add('hidden');
                 document.getElementById('inputView').classList.remove('hidden');
             }
+            
+            await loadAllData();
+            setupEventListeners();
         }
         
         function setupEventListeners() {
@@ -955,5 +822,5 @@ function handleSessionExpired() {
         // Initialize app on load
         initApp();
     </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ab061ab416fe77e',t:'MTc2NTI0MDA5Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ab088555236b5ab',t:'MTc2NTI0MTY4MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
