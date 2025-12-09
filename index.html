@@ -3,7 +3,7 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ledger Digital _ By Ipoel</title>
+  <title>E-Ledger Input System - Merdeka Belajar By Ipoel</title>
   <link rel="icon" type="image/png" href="https://avatars.githubusercontent.com/u/124555450?v=4">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -93,6 +93,37 @@
             animation: spin 0.8s linear infinite;
             margin: 0 auto 1rem;
         }
+
+        .running-text-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(90deg, #1e40af 0%, #7c3aed 100%);
+            padding: 8px 0;
+            overflow: hidden;
+            z-index: 9998;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .running-text {
+            display: inline-block;
+            white-space: nowrap;
+            animation: scroll-text 20s linear infinite;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            padding-left: 100%;
+        }
+
+        @keyframes scroll-text {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-100%);
+            }
+        }
     </style>
   <style>@view-transition { navigation: auto; }</style>
   <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
@@ -104,13 +135,18 @@
     <div class="big-spinner"></div>
     <p class="text-gray-700 font-semibold">Memuat data...</p>
    </div>
+  </div><!-- Running Text Bar -->
+  <div class="running-text-container">
+   <div class="running-text">
+    ✨ Ledger Digital _ By Ipoel ✨ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 📚 E-Ledger Input System - SMK Negeri 4 Jakarta &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🎓 Tahun Pelajaran 2025/2026 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 💡 Kelola Nilai Siswa dengan Mudah dan Efisien &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ✨ Ledger Digital _ By Ipoel ✨ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 📚 E-Ledger Input System - SMK Negeri 4 Jakarta &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+   </div>
   </div>
-  <div id="app" class="h-full w-full overflow-auto"><!-- Dashboard View -->
+  <div id="app" class="h-full w-full overflow-auto" style="padding-bottom: 50px;"><!-- Dashboard View -->
    <div id="dashboardView" class="min-h-full p-8">
     <div class="max-w-7xl mx-auto">
      <div class="text-center mb-12">
-      <h1 class="text-5xl font-bold text-gray-800 mb-4">E-Ledger</h1>
-      <p class="text-xl text-gray-600">SMK Negeri 4 Jakarta • Tahun Pelajaran 2025/2026</p>
+      <h1 class="text-5xl font-bold text-gray-800 mb-4">E-Rapor Input System</h1>
+      <p class="text-xl text-gray-600">SMK Negeri 1 Jakarta • Tahun Pelajaran 2023/2024</p>
      </div>
      <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
       <h2 class="text-2xl font-bold text-gray-800 mb-6">📚 Tambah Kelas Baru</h2>
@@ -136,7 +172,7 @@
    <div id="inputView" class="hidden min-h-full">
     <div class="bg-white shadow-lg sticky-header">
      <div class="max-w-full mx-auto px-8 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-4"><button id="backBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors"> �� Kembali </button>
+      <div class="flex items-center gap-4"><button id="backBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors"> 🔙 Kembali </button>
        <div>
         <h2 id="currentClassName" class="text-2xl font-bold text-gray-800"></h2>
         <p id="currentSubject" class="text-sm text-gray-600"></p>
@@ -890,5 +926,5 @@
         // Initialize app on load
         initApp();
     </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ab08e5280b4b5ab',t:'MTc2NTI0MTkyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ab095df264ab5ab',t:'MTc2NTI0MjIzNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
