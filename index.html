@@ -253,7 +253,7 @@
   </div><!-- Running Text Bar -->
   <div class="running-text-container">
    <div class="running-text">
-    ✨ Ledger Digital _ By Ipoel ✨ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 📚 E-Ledger Input System - SMK Negeri 4 Jakarta &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🎓 Tahun Pelajaran 2025/2026 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 💡 Kelola Nilai Siswa dengan Mudah dan Efisien &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ✨ Ledger Digital _ By Ipoel ✨ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 📚 E-Rapor Input System - SMK Negeri 1 Jakarta &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    ✨ Ledger Digital _ By Ipoel ✨ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 📚 E-Ledger Input System - SMK Negeri 4 Jakarta &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🎓 Tahun Pelajaran 2025/2026 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 💡 Kelola Nilai Siswa dengan Mudah dan Efisien &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ✨ Ledger Digital _ By Ipoel ✨ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 📚 E-Ledger Input System - SMK Negeri 4 Jakarta &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
    </div>
   </div>
   <div id="app" class="h-full w-full overflow-auto" style="padding-bottom: 50px;"><!-- Dashboard View -->
@@ -519,6 +519,23 @@
                 
                 allData = data || [];
                 
+                // Auto-detect classes from database and merge with localStorage
+                const uniqueClasses = {};
+                allData.forEach(student => {
+                    if (student.class_id && student.class_name) {
+                        if (!classMetadata[student.class_id]) {
+                            uniqueClasses[student.class_id] = {
+                                name: student.class_name,
+                                subject: student.class_name // Use class_name as fallback
+                            };
+                        }
+                    }
+                });
+                
+                // Merge detected classes with existing metadata
+                Object.assign(classMetadata, uniqueClasses);
+                saveClassMetadata();
+                
                 if (currentClassId) {
                     renderGradesTable();
                 } else {
@@ -631,18 +648,31 @@
             
             if (!className || !subjectName) return;
             
-            const classId = `class_${Date.now()}`;
-            classMetadata[classId] = {
-                name: className,
-                subject: subjectName
-            };
+            const btn = document.getElementById('addClassBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
             
-            saveClassMetadata();
-            
-            document.getElementById('addClassForm').reset();
-            showToast(`Kelas ${className} berhasil ditambahkan!`, "success");
-            
-            renderClassList();
+            try {
+                const classId = `class_${Date.now()}`;
+                classMetadata[classId] = {
+                    name: className,
+                    subject: subjectName
+                };
+                
+                saveClassMetadata();
+                
+                document.getElementById('addClassForm').reset();
+                showToast(`✅ Kelas ${className} - ${subjectName} berhasil ditambahkan!`, "success");
+                
+                // Immediate re-render without delay
+                renderClassList();
+            } catch (error) {
+                showToast("Gagal menambahkan kelas", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
         }
         
         function renderClassList() {
@@ -1195,5 +1225,5 @@
         
         initApp();
     </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ac9c7c985f8e783',t:'MTc2NTUwNjQyMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ac9ee0146a34f6a',t:'MTc2NTUwNzk4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
