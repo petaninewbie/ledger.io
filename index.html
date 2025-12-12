@@ -434,16 +434,33 @@
         let saveTimeout = null;
         let pendingClassId = null;
         
-        // Load class metadata from localStorage
-        function loadClassMetadata() {
-            const saved = localStorage.getItem('classMetadata');
-            if (saved) {
-                classMetadata = JSON.parse(saved);
+        // Load class metadata from Supabase (auto-detect from database)
+        async function loadClassMetadata() {
+            try {
+                const { data, error } = await supabase
+                    .from('student_grades')
+                    .select('class_id, class_name')
+                    .order('created_at', { ascending: true });
+                
+                if (error) throw error;
+                
+                // Build unique classes from database
+                const uniqueClasses = {};
+                if (data) {
+                    data.forEach(record => {
+                        if (record.class_id && record.class_name && !uniqueClasses[record.class_id]) {
+                            uniqueClasses[record.class_id] = {
+                                name: record.class_name,
+                                subject: record.class_name // Will be overridden if metadata exists
+                            };
+                        }
+                    });
+                }
+                
+                classMetadata = uniqueClasses;
+            } catch (error) {
+                console.error('Error loading class metadata:', error);
             }
-        }
-        
-        function saveClassMetadata() {
-            localStorage.setItem('classMetadata', JSON.stringify(classMetadata));
         }
         
         // Session Management
@@ -510,6 +527,9 @@
         async function loadAllData() {
             showLoading();
             try {
+                // Load class metadata from database first
+                await loadClassMetadata();
+                
                 const { data, error } = await supabase
                     .from('student_grades')
                     .select('*')
@@ -518,23 +538,6 @@
                 if (error) throw error;
                 
                 allData = data || [];
-                
-                // Auto-detect classes from database and merge with localStorage
-                const uniqueClasses = {};
-                allData.forEach(student => {
-                    if (student.class_id && student.class_name) {
-                        if (!classMetadata[student.class_id]) {
-                            uniqueClasses[student.class_id] = {
-                                name: student.class_name,
-                                subject: student.class_name // Use class_name as fallback
-                            };
-                        }
-                    }
-                });
-                
-                // Merge detected classes with existing metadata
-                Object.assign(classMetadata, uniqueClasses);
-                saveClassMetadata();
                 
                 if (currentClassId) {
                     renderGradesTable();
@@ -550,7 +553,8 @@
         }
         
         async function initApp() {
-            loadClassMetadata();
+            // Load class metadata from database first
+            await loadClassMetadata();
             
             // Restore session if exists
             const savedClassId = loadSession();
@@ -655,20 +659,42 @@
             
             try {
                 const classId = `class_${Date.now()}`;
+                
+                // Create a placeholder student to establish the class in database
+                const placeholderStudent = {
+                    class_id: classId,
+                    class_name: `${className} - ${subjectName}`,
+                    nis: 'PLACEHOLDER',
+                    student_name: 'Data akan ditambahkan',
+                    sum1: 0, sum2: 0, sum3: 0, sum4: 0, sum5: 0, sum6: 0,
+                    sum7: 0, sum8: 0, sum9: 0, sum10: 0, sum11: 0,
+                    pts: 0, non_tes: 0, tes: 0
+                };
+                
+                const { data, error } = await supabase
+                    .from('student_grades')
+                    .insert([placeholderStudent])
+                    .select();
+                
+                if (error) throw error;
+                
+                // Add to local data
+                allData.push(data[0]);
+                
+                // Update metadata
                 classMetadata[classId] = {
                     name: className,
                     subject: subjectName
                 };
                 
-                saveClassMetadata();
-                
                 document.getElementById('addClassForm').reset();
                 showToast(`✅ Kelas ${className} - ${subjectName} berhasil ditambahkan!`, "success");
                 
-                // Immediate re-render without delay
-                renderClassList();
+                // Reload to reflect changes
+                await loadAllData();
             } catch (error) {
-                showToast("Gagal menambahkan kelas", "error");
+                console.error('Error adding class:', error);
+                showToast("Gagal menambahkan kelas: " + error.message, "error");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalText;
@@ -798,7 +824,6 @@
                     }
                     
                     delete classMetadata[classId];
-                    saveClassMetadata();
                     
                     if (currentClassId === classId) {
                         clearSession();
@@ -807,7 +832,9 @@
                     
                     confirmDelete.remove();
                     showToast(`Kelas ${meta.name} berhasil dihapus!`, "success");
-                    renderClassList();
+                    
+                    // Reload data from database
+                    await loadAllData();
                 } catch (error) {
                     console.error('Error deleting class:', error);
                     confirmDelete.remove();
@@ -1087,6 +1114,22 @@
                     return;
                 }
                 
+                // STEP 1: Delete all existing students in this class
+                const existingStudents = allData.filter(d => d.class_id === currentClassId);
+                if (existingStudents.length > 0) {
+                    const studentIds = existingStudents.map(s => s.id);
+                    const { error: deleteError } = await supabase
+                        .from('student_grades')
+                        .delete()
+                        .in('id', studentIds);
+                    
+                    if (deleteError) throw deleteError;
+                    
+                    // Remove from local array
+                    allData = allData.filter(d => d.class_id !== currentClassId);
+                }
+                
+                // STEP 2: Insert new data from Excel
                 const studentsToInsert = studentData.map(row => {
                     // Parse all grade values, default to 0 if empty
                     const parseGrade = (val) => {
@@ -1129,7 +1172,7 @@
                 btn.textContent = 'Upload & Import';
                 document.getElementById('importModal').classList.add('hidden');
                 
-                showToast(`✅ Berhasil import ${insertedData.length} siswa dengan semua nilai!`, "success");
+                showToast(`✅ Data lama diganti! Berhasil import ${insertedData.length} siswa baru!`, "success");
                 renderGradesTable();
                 
             } catch (error) {
@@ -1225,5 +1268,5 @@
         
         initApp();
     </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ac9ee0146a34f6a',t:'MTc2NTUwNzk4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9aca297824459509',t:'MTc2NTUxMDQyNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
