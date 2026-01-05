@@ -102,6 +102,61 @@
             }
         }
 
+        .logo-glow {
+            position: relative;
+            animation: glow-pulse 2.5s ease-in-out infinite;
+            filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.5));
+            display: inline-block;
+            overflow: visible;
+        }
+
+        @keyframes glow-pulse {
+            0%, 100% {
+                filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.5)) drop-shadow(0 0 20px rgba(59, 130, 246, 0.3));
+            }
+            50% {
+                filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.7)) drop-shadow(0 0 35px rgba(59, 130, 246, 0.5));
+            }
+        }
+
+        .logo-glow::after {
+            content: '';
+            position: absolute;
+            top: -10%;
+            left: -110%;
+            width: 50%;
+            height: 120%;
+            background: linear-gradient(
+                90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.1) 25%,
+                rgba(255, 255, 255, 0.6) 50%,
+                rgba(255, 255, 255, 0.1) 75%,
+                transparent 100%
+            );
+            transform: skewX(-20deg);
+            animation: shiny-sweep 3s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes shiny-sweep {
+            0% {
+                left: -110%;
+                opacity: 0;
+            }
+            20% {
+                opacity: 1;
+            }
+            50% {
+                left: 110%;
+                opacity: 1;
+            }
+            50.1%, 100% {
+                left: 110%;
+                opacity: 0;
+            }
+        }
+
         .running-text-container {
             position: fixed;
             bottom: 0;
@@ -244,7 +299,7 @@
  </head>
  <body class="h-full bg-gradient-to-br from-blue-50 to-indigo-100"><!-- Loading Overlay -->
   <div id="loadingOverlay" class="loading-overlay hidden">
-   <div class="loading-content"><img src="https://i.imgur.com/UVQedhI.png" alt="Loading" class="loading-image" onerror="this.style.display='none';">
+   <div class="loading-content"><img src="https://i.imgur.com/UVQedhI.png" alt="Loading" class="loading-image logo-glow" onerror="this.style.display='none';">
     <p class="text-gray-700 font-semibold mt-4">Memuat data...</p>
    </div>
   </div><!-- Auto-save Indicator -->
@@ -260,8 +315,11 @@
    <div id="dashboardView" class="min-h-full p-8">
     <div class="max-w-7xl mx-auto">
      <div class="text-center mb-12">
-      <div class="header-marquee-container mb-6">
-       <h1 class="header-marquee-text">✨ E-Ledger Input System - Sistem Manajemen Nilai Digital Modern &amp; Interaktif ✨</h1>
+      <div class="flex items-center justify-center gap-4 mb-6"><img src="https://i.imgur.com/UVQedhI.png" alt="Logo Sekolah" class="w-24 h-24 object-contain logo-glow" onerror="this.style.display='none';">
+       <div>
+        <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-2">E-Ledger Input System</h1>
+        <p class="text-lg text-gray-600 font-semibold">Sistem Manajemen Nilai Digital Modern</p>
+       </div>
       </div>
       <p class="text-xl text-gray-700 font-semibold">🏫 SMK Negeri 4 Jakarta • 📅 Tahun Pelajaran 2025/2026</p>
      </div>
@@ -359,12 +417,16 @@
    <div id="passwordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
      <h3 class="text-2xl font-bold text-gray-800 mb-4">🔒 Masukkan Password</h3>
-     <p class="text-gray-600 mb-6">Password diperlukan untuk membuka kelas ini</p><input type="password" id="classPassword" placeholder="Masukkan password" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition-colors mb-2">
-     <div id="passwordError" class="text-red-500 text-sm mb-4 hidden">
-      ❌ Password salah, coba lagi!
-     </div>
-     <div class="flex gap-3"><button id="cancelPasswordBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors"> Batal </button> <button id="submitPasswordBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"> Buka Kelas </button>
-     </div>
+     <p class="text-gray-600 mb-6">Password diperlukan untuk membuka kelas ini</p>
+     <form id="passwordForm" class="space-y-4">
+      <div><label for="classPassword" class="block text-sm font-semibold text-gray-700 mb-2">Password Kelas</label> <input type="password" id="classPassword" placeholder="Masukkan password" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition-colors">
+      </div>
+      <div id="passwordError" class="text-red-500 text-sm hidden">
+       ❌ Password salah, coba lagi!
+      </div>
+      <div class="flex gap-3"><button type="button" id="cancelPasswordBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors"> Batal </button> <button type="submit" id="submitPasswordBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"> Buka Kelas </button>
+      </div>
+     </form>
     </div>
    </div><!-- Import Data Modal -->
    <div id="importModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -434,42 +496,56 @@
         let saveTimeout = null;
         let pendingClassId = null;
         
-        // Load class metadata from Supabase (auto-detect from database)
+        // Load class metadata from Supabase
         async function loadClassMetadata() {
             try {
                 const { data, error } = await supabase
                     .from('student_grades')
-                    .select('class_id, class_name')
+                    .select('class_id, class_name, created_at')
                     .order('created_at', { ascending: true });
                 
-                if (error) throw error;
+                if (error) {
+                    console.error('Error loading class metadata:', error);
+                    throw error;
+                }
                 
-                // Build unique classes from database
+                console.log('Raw data from Supabase:', data);
+                
                 const uniqueClasses = {};
-                if (data) {
+                if (data && data.length > 0) {
                     data.forEach(record => {
+                        console.log('Processing record:', record);
                         if (record.class_id && record.class_name && !uniqueClasses[record.class_id]) {
+                            const parts = record.class_name.split(' - ');
                             uniqueClasses[record.class_id] = {
-                                name: record.class_name,
-                                subject: record.class_name // Will be overridden if metadata exists
+                                name: parts[0] || record.class_name,
+                                subject: parts[1] || 'Mata Pelajaran'
                             };
+                            console.log('Added class:', record.class_id, uniqueClasses[record.class_id]);
                         }
                     });
                 }
                 
                 classMetadata = uniqueClasses;
+                console.log('Final class metadata:', classMetadata);
+                console.log('Total classes found:', Object.keys(classMetadata).length);
+                
+                return classMetadata;
             } catch (error) {
                 console.error('Error loading class metadata:', error);
+                classMetadata = {};
+                return classMetadata;
             }
         }
         
-        // Session Management
+        // Session Management - Improved to persist data properly
         function saveSession() {
             const sessionData = {
                 currentClassId: currentClassId,
                 timestamp: Date.now()
             };
             localStorage.setItem('appSession', JSON.stringify(sessionData));
+            console.log('Session saved:', sessionData);
         }
         
         function loadSession() {
@@ -477,8 +553,9 @@
             if (saved) {
                 try {
                     const sessionData = JSON.parse(saved);
-                    // Session valid for 24 hours
-                    if (Date.now() - sessionData.timestamp < 24 * 60 * 60 * 1000) {
+                    // Keep session for 7 days instead of 1 day
+                    if (Date.now() - sessionData.timestamp < 7 * 24 * 60 * 60 * 1000) {
+                        console.log('Session loaded:', sessionData);
                         return sessionData.currentClassId;
                     }
                 } catch (e) {
@@ -490,6 +567,7 @@
         
         function clearSession() {
             localStorage.removeItem('appSession');
+            console.log('Session cleared');
         }
         
         function showLoading() {
@@ -525,9 +603,7 @@
         }
         
         async function loadAllData() {
-            showLoading();
             try {
-                // Load class metadata from database first
                 await loadClassMetadata();
                 
                 const { data, error } = await supabase
@@ -538,39 +614,54 @@
                 if (error) throw error;
                 
                 allData = data || [];
+                console.log('Data loaded:', allData.length, 'records');
                 
-                if (currentClassId) {
-                    renderGradesTable();
-                } else {
-                    renderClassList();
-                }
+                // Don't render here, let the caller decide what to render
             } catch (error) {
                 console.error('Error loading data:', error);
                 showToast('Gagal memuat data: ' + error.message, 'error');
-            } finally {
-                hideLoading();
             }
         }
         
         async function initApp() {
-            // Load class metadata from database first
-            await loadClassMetadata();
+            showLoading();
             
-            // Restore session if exists
-            const savedClassId = loadSession();
-            if (savedClassId && classMetadata[savedClassId]) {
-                currentClassId = savedClassId;
+            try {
+                // Always load all data first
+                await loadAllData();
                 
-                // Set UI immediately before loading data
-                const meta = classMetadata[currentClassId];
-                document.getElementById('currentClassName').textContent = meta.name;
-                document.getElementById('currentSubject').textContent = meta.subject;
-                document.getElementById('dashboardView').classList.add('hidden');
-                document.getElementById('inputView').classList.remove('hidden');
+                console.log('After loadAllData - classMetadata:', classMetadata);
+                console.log('After loadAllData - allData length:', allData.length);
+                
+                // After loading data, check if there's a saved session
+                const savedClassId = loadSession();
+                console.log('Checking saved session:', savedClassId);
+                console.log('Available classes:', Object.keys(classMetadata));
+                
+                if (savedClassId && classMetadata[savedClassId]) {
+                    currentClassId = savedClassId;
+                    
+                    const meta = classMetadata[currentClassId];
+                    document.getElementById('currentClassName').textContent = meta.name;
+                    document.getElementById('currentSubject').textContent = meta.subject;
+                    document.getElementById('dashboardView').classList.add('hidden');
+                    document.getElementById('inputView').classList.remove('hidden');
+                    
+                    renderGradesTable();
+                } else {
+                    // Show dashboard if no valid session
+                    document.getElementById('dashboardView').classList.remove('hidden');
+                    document.getElementById('inputView').classList.add('hidden');
+                    renderClassList();
+                }
+                
+            } catch (error) {
+                console.error('Error in initApp:', error);
+                showToast('Gagal memuat aplikasi: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+                setupEventListeners();
             }
-            
-            await loadAllData();
-            setupEventListeners();
         }
         
         function setupEventListeners() {
@@ -584,6 +675,7 @@
                 clearSession();
                 document.getElementById('dashboardView').classList.remove('hidden');
                 document.getElementById('inputView').classList.add('hidden');
+                renderClassList();
             });
             
             document.getElementById('addStudentBtn').addEventListener('click', () => {
@@ -629,7 +721,6 @@
             
             document.getElementById('processImportBtn').addEventListener('click', handleImport);
             
-            // Password modal handlers
             document.getElementById('cancelPasswordBtn').addEventListener('click', () => {
                 document.getElementById('passwordModal').classList.add('hidden');
                 document.getElementById('classPassword').value = '';
@@ -637,12 +728,9 @@
                 pendingClassId = null;
             });
             
-            document.getElementById('submitPasswordBtn').addEventListener('click', checkPassword);
-            
-            document.getElementById('classPassword').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    checkPassword();
-                }
+            document.getElementById('passwordForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                checkPassword();
             });
         }
         
@@ -660,7 +748,6 @@
             try {
                 const classId = `class_${Date.now()}`;
                 
-                // Create a placeholder student to establish the class in database
                 const placeholderStudent = {
                     class_id: classId,
                     class_name: `${className} - ${subjectName}`,
@@ -678,10 +765,8 @@
                 
                 if (error) throw error;
                 
-                // Add to local data
                 allData.push(data[0]);
                 
-                // Update metadata
                 classMetadata[classId] = {
                     name: className,
                     subject: subjectName
@@ -690,8 +775,12 @@
                 document.getElementById('addClassForm').reset();
                 showToast(`✅ Kelas ${className} - ${subjectName} berhasil ditambahkan!`, "success");
                 
-                // Reload to reflect changes
+                // Reload data from database to ensure consistency
                 await loadAllData();
+                
+                // Re-render the class list
+                renderClassList();
+                
             } catch (error) {
                 console.error('Error adding class:', error);
                 showToast("Gagal menambahkan kelas: " + error.message, "error");
@@ -719,7 +808,7 @@
                 const studentCount = allData.filter(d => d.class_id === classId).length;
                 
                 return `
-                    <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow relative">
+                    <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-6 text-white shadow-lg hover:shadow-2xl transition-all hover:scale-105 relative">
                         <button onclick="deleteClass('${classId}'); event.stopPropagation();" 
                             class="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full font-bold transition-colors z-10">
                             ✕
@@ -833,7 +922,6 @@
                     confirmDelete.remove();
                     showToast(`Kelas ${meta.name} berhasil dihapus!`, "success");
                     
-                    // Reload data from database
                     await loadAllData();
                 } catch (error) {
                     console.error('Error deleting class:', error);
@@ -1046,7 +1134,6 @@
             const meta = classMetadata[currentClassId];
             const wb = XLSX.utils.book_new();
             
-            // Create template with complete structure
             const templateData = [
                 ['NIS', 'Nama Siswa', 'SUM1', 'SUM2', 'SUM3', 'SUM4', 'SUM5', 'SUM6', 'SUM7', 'SUM8', 'SUM9', 'SUM10', 'SUM11', 'PTS', 'Non Tes', 'Tes'],
                 ['12345', 'Contoh Siswa 1', 85, 90, 78, 88, 92, 85, 80, 87, 89, 91, 86, 88, 85, 90],
@@ -1056,24 +1143,10 @@
             
             const ws = XLSX.utils.aoa_to_sheet(templateData);
             
-            // Set column widths
             ws['!cols'] = [
-                { wch: 12 },  // NIS
-                { wch: 25 },  // Nama Siswa
-                { wch: 8 },   // SUM1
-                { wch: 8 },   // SUM2
-                { wch: 8 },   // SUM3
-                { wch: 8 },   // SUM4
-                { wch: 8 },   // SUM5
-                { wch: 8 },   // SUM6
-                { wch: 8 },   // SUM7
-                { wch: 8 },   // SUM8
-                { wch: 8 },   // SUM9
-                { wch: 8 },   // SUM10
-                { wch: 8 },   // SUM11
-                { wch: 8 },   // PTS
-                { wch: 10 },  // Non Tes
-                { wch: 8 }    // Tes
+                { wch: 12 }, { wch: 25 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
+                { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
+                { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 8 }
             ];
             
             XLSX.utils.book_append_sheet(wb, ws, "Data Siswa");
@@ -1104,7 +1177,6 @@
                 const worksheet = workbook.Sheets[sheetName];
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                 
-                // Skip header row and filter valid data
                 const studentData = jsonData.slice(1).filter(row => row[0] && row[1]);
                 
                 if (studentData.length === 0) {
@@ -1114,7 +1186,6 @@
                     return;
                 }
                 
-                // STEP 1: Delete all existing students in this class
                 const existingStudents = allData.filter(d => d.class_id === currentClassId);
                 if (existingStudents.length > 0) {
                     const studentIds = existingStudents.map(s => s.id);
@@ -1125,13 +1196,10 @@
                     
                     if (deleteError) throw deleteError;
                     
-                    // Remove from local array
                     allData = allData.filter(d => d.class_id !== currentClassId);
                 }
                 
-                // STEP 2: Insert new data from Excel
                 const studentsToInsert = studentData.map(row => {
-                    // Parse all grade values, default to 0 if empty
                     const parseGrade = (val) => {
                         const num = parseFloat(val);
                         return (isNaN(num) || num < 0 || num > 100) ? 0 : num;
@@ -1240,15 +1308,9 @@
             const ws = XLSX.utils.aoa_to_sheet(data);
             
             ws['!cols'] = [
-                { wch: 5 },
-                { wch: 12 },
-                { wch: 25 },
+                { wch: 5 }, { wch: 12 }, { wch: 25 },
                 ...Array(12).fill({ wch: 8 }),
-                { wch: 12 },
-                { wch: 10 },
-                { wch: 8 },
-                { wch: 10 },
-                { wch: 12 }
+                { wch: 12 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 12 }
             ];
             
             XLSX.utils.book_append_sheet(wb, ws, "Data Nilai");
@@ -1268,5 +1330,5 @@
         
         initApp();
     </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9aca297824459509',t:'MTc2NTUxMDQyNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b901221d6baea86',t:'MTc2NzU4NTY0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
