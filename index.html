@@ -294,8 +294,8 @@
         }
     </style>
   <style>@view-transition { navigation: auto; }</style>
-  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
-  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
+  <!-- <script src="element_sdk.js"></script> -->
+  <!-- <script src="data_sdk.js"></script> -->
  </head>
  <body class="h-full bg-gradient-to-br from-blue-50 to-indigo-100"><!-- Loading Overlay -->
   <div id="loadingOverlay" class="loading-overlay hidden">
@@ -488,7 +488,11 @@
         const SUPABASE_URL = 'https://qjjvbfsaeatsskbtywyw.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqanZiZnNhZWF0c3NrYnR5d3l3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjcwMTcsImV4cCI6MjA4MDgwMzAxN30.gOKS1GTvQFJKLYAEgr-06n_H4zTPEswRV7y4hv-ao28';
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Create or reuse a single global Supabase client instance to avoid redeclaration errors
+       if (!window.__supabase_client) {
+       window.__supabase_client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+       }
+       const supabase = window.__supabase_client;
         
         let allData = [];
         let currentClassId = null;
