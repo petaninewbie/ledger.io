@@ -1,144 +1,1338 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ledger.io - Personal Finance Management</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-</head>
-<body>
-    <div id="app"></div>
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-Ledger Input System</title>
+  <link rel="icon" type="image/png" href="https://i.imgur.com/UVQedhI.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+        body {
+            box-sizing: border-box;
+        }
+        
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .input-cell {
+            transition: all 0.2s;
+        }
+        
+        .input-cell:focus {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        
+        .student-row:hover {
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
 
-    <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
 
-    <!-- Main App Script -->
-    <script src="app.js"></script>
+        .loading-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+        }
 
-    <!-- Authentication Script -->
-    <script>
-        // Initialize Supabase client
-        const SUPABASE_URL = 'https://yoursupabaseurl.supabase.co';
-        const SUPABASE_ANON_KEY = 'your-anon-key';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        .loading-image {
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
 
-        // Check if user is already logged in
-        async function checkAuth() {
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) {
-                    // User is logged in
-                    console.log('User logged in:', user.email);
-                    // Redirect to dashboard or show main app
-                    document.getElementById('app').innerHTML = '<div class="dashboard">Welcome to Ledger.io</div>';
-                } else {
-                    // User is not logged in, show login form
-                    showLoginForm();
-                }
-            } catch (error) {
-                console.error('Error checking auth:', error);
-                showLoginForm();
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
             }
         }
 
-        // Show login form
-        function showLoginForm() {
-            document.getElementById('app').innerHTML = `
-                <div class="auth-container">
-                    <div class="auth-box">
-                        <h1>Ledger.io</h1>
-                        <p>Personal Finance Management</p>
-                        <form id="login-form">
-                            <input type="email" id="email" placeholder="Email" required>
-                            <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
-                            <button type="submit" class="btn-primary">Login</button>
-                            <p class="auth-toggle">Don't have an account? <a href="#" onclick="toggleSignup(event)">Sign up</a></p>
-                        </form>
-                        <div id="signup-form" style="display: none;">
-                            <h2>Create Account</h2>
-                            <form id="register-form">
-                                <input type="email" id="signup-email" placeholder="Email" required>
-                                <input type="password" id="signup-password" placeholder="Password" autocomplete="new-password" required>
-                                <input type="password" id="confirm-password" placeholder="Confirm Password" autocomplete="new-password" required>
-                                <button type="submit" class="btn-primary">Sign Up</button>
-                                <p class="auth-toggle">Already have an account? <a href="#" onclick="toggleSignup(event)">Login</a></p>
-                            </form>
+        .logo-glow {
+            position: relative;
+            animation: glow-pulse 2.5s ease-in-out infinite;
+            filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.5));
+            display: inline-block;
+            overflow: visible;
+        }
+
+        @keyframes glow-pulse {
+            0%, 100% {
+                filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.5)) drop-shadow(0 0 20px rgba(59, 130, 246, 0.3));
+            }
+            50% {
+                filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.7)) drop-shadow(0 0 35px rgba(59, 130, 246, 0.5));
+            }
+        }
+
+        .logo-glow::after {
+            content: '';
+            position: absolute;
+            top: -10%;
+            left: -110%;
+            width: 50%;
+            height: 120%;
+            background: linear-gradient(
+                90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.1) 25%,
+                rgba(255, 255, 255, 0.6) 50%,
+                rgba(255, 255, 255, 0.1) 75%,
+                transparent 100%
+            );
+            transform: skewX(-20deg);
+            animation: shiny-sweep 3s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes shiny-sweep {
+            0% {
+                left: -110%;
+                opacity: 0;
+            }
+            20% {
+                opacity: 1;
+            }
+            50% {
+                left: 110%;
+                opacity: 1;
+            }
+            50.1%, 100% {
+                left: 110%;
+                opacity: 0;
+            }
+        }
+
+        .running-text-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(90deg, #1e40af 0%, #7c3aed 100%);
+            padding: 8px 0;
+            overflow: hidden;
+            z-index: 9998;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .running-text {
+            display: inline-block;
+            white-space: nowrap;
+            animation: scroll-text 20s linear infinite;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            padding-left: 100%;
+        }
+
+        @keyframes scroll-text {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+
+        .header-marquee-container {
+            background: linear-gradient(90deg, #2563eb 0%, #4f46e5 50%, #7c3aed 100%);
+            padding: 1.5rem 0;
+            overflow: hidden;
+            border-radius: 1rem;
+            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.4);
+            position: relative;
+            margin: 0 auto;
+            max-width: 100%;
+        }
+
+        .header-marquee-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0%, 100% {
+                left: -100%;
+            }
+            50% {
+                left: 100%;
+            }
+        }
+
+        .header-marquee-text {
+            display: inline-block;
+            white-space: nowrap;
+            animation: marquee-scroll 25s linear infinite;
+            color: white;
+            font-weight: 800;
+            font-size: 2.5rem;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+            padding: 0 3rem;
+            letter-spacing: 0.05em;
+        }
+
+        @keyframes marquee-scroll {
+            0% {
+                transform: translateX(100%);
+            }
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        }
+
+        @media (max-width: 768px) {
+            .header-marquee-text {
+                font-size: 1.5rem;
+            }
+        }
+
+        .save-indicator {
+            position: fixed;
+            bottom: 60px;
+            right: 20px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 999;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .save-indicator.saving {
+            display: flex;
+            background: #3b82f6;
+            color: white;
+        }
+
+        .save-indicator.saved {
+            display: flex;
+            background: #10b981;
+            color: white;
+        }
+
+        .save-indicator.error {
+            display: flex;
+            background: #ef4444;
+            color: white;
+        }
+
+        .small-spinner {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            animation: spin 0.6s linear infinite;
+        }
+    </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <!-- <script src="element_sdk.js"></script> -->
+  <!-- <script src="data_sdk.js"></script> -->
+ </head>
+ <body class="h-full bg-gradient-to-br from-blue-50 to-indigo-100"><!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay hidden">
+   <div class="loading-content"><img src="https://i.imgur.com/UVQedhI.png" alt="Loading" class="loading-image logo-glow" onerror="this.style.display='none';">
+    <p class="text-gray-700 font-semibold mt-4">Memuat data...</p>
+   </div>
+  </div><!-- Auto-save Indicator -->
+  <div id="saveIndicator" class="save-indicator">
+   <div class="small-spinner"></div><span id="saveText">Menyimpan...</span>
+  </div><!-- Running Text Bar -->
+  <div class="running-text-container">
+   <div class="running-text">
+    ✨ Ledger Digital _ By Ipoel ✨ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 📚 E-Ledger Input System - SMK Negeri 4 Jakarta &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🎓 Tahun Pelajaran 2025/2026 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 💡 Kelola Nilai Siswa dengan Mudah dan Efisien &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ✨ Ledger Digital _ By Ipoel ✨ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 📚 E-Ledger Input System - SMK Negeri 4 Jakarta &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+   </div>
+  </div>
+  <div id="app" class="h-full w-full overflow-auto" style="padding-bottom: 50px;"><!-- Dashboard View -->
+   <div id="dashboardView" class="min-h-full p-8">
+    <div class="max-w-7xl mx-auto">
+     <div class="text-center mb-12">
+      <div class="flex items-center justify-center gap-4 mb-6"><img src="https://i.imgur.com/UVQedhI.png" alt="Logo Sekolah" class="w-24 h-24 object-contain logo-glow" onerror="this.style.display='none';">
+       <div>
+        <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-2">E-Ledger Input System</h1>
+        <p class="text-lg text-gray-600 font-semibold">Sistem Manajemen Nilai Digital Modern</p>
+       </div>
+      </div>
+      <p class="text-xl text-gray-700 font-semibold">🏫 SMK Negeri 4 Jakarta • 📅 Tahun Pelajaran 2025/2026</p>
+     </div>
+     <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">📚 Tambah Kelas Baru</h2>
+      <form id="addClassForm" class="space-y-4">
+       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div><label for="className" class="block text-sm font-semibold text-gray-700 mb-2">Nama Kelas</label> <input type="text" id="className" placeholder="Contoh: XI-TKP-1" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition-colors">
+        </div>
+        <div><label for="subjectName" class="block text-sm font-semibold text-gray-700 mb-2">Mata Pelajaran</label> <input type="text" id="subjectName" placeholder="Contoh: Matematika" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition-colors">
+        </div>
+       </div><button type="submit" id="addClassBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"> <span>➕ Tambah Kelas</span> </button>
+      </form>
+     </div>
+     <div class="bg-white rounded-2xl shadow-xl p-8">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">📋 Daftar Kelas</h2>
+      <div id="classList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+       <div class="text-center py-12 text-gray-500 col-span-full">
+        Belum ada kelas. Silakan tambahkan kelas baru di atas.
+       </div>
+      </div>
+     </div>
+    </div>
+   </div><!-- Input View -->
+   <div id="inputView" class="hidden min-h-full">
+    <div class="bg-white shadow-lg sticky-header">
+     <div class="max-w-full mx-auto px-8 py-4 flex items-center justify-between flex-wrap gap-4">
+      <div class="flex items-center gap-4"><button id="backBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors"> ← Kembali </button>
+       <div>
+        <h2 id="currentClassName" class="text-2xl font-bold text-gray-800"></h2>
+        <p id="currentSubject" class="text-sm text-gray-600"></p>
+       </div>
+      </div>
+      <div class="flex items-center gap-3 flex-wrap"><button id="downloadTemplateBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"> 📄 Download Template </button> <button id="importBtn" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"> 📤 Import Excel </button> <button id="addStudentBtn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"> ➕ Siswa </button> <button id="exportBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"> 📥 Export Excel </button>
+      </div>
+     </div>
+    </div>
+    <div class="p-8">
+     <div class="bg-white rounded-xl shadow-lg overflow-x-auto">
+      <table class="w-full" id="gradesTable">
+       <thead class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white sticky-header">
+        <tr>
+         <th class="px-4 py-3 text-left font-semibold text-sm" rowspan="2">No</th>
+         <th class="px-4 py-3 text-left font-semibold text-sm" rowspan="2">NIS</th>
+         <th class="px-4 py-3 text-left font-semibold text-sm" rowspan="2">Nama Siswa</th>
+         <th class="px-2 py-3 text-center font-semibold text-xs border-l border-blue-400" colspan="12">Sumatif Lingkup Materi</th>
+         <th class="px-4 py-3 text-center font-semibold text-xs border-l border-blue-400" rowspan="2">NA<br>
+          Sumatif (S)</th>
+         <th class="px-2 py-3 text-center font-semibold text-xs border-l border-blue-400" colspan="2">Sumatif Akhir Semester</th>
+         <th class="px-4 py-3 text-center font-semibold text-xs border-l border-blue-400" rowspan="2">NA<br>
+          SAS (AS)</th>
+         <th class="px-4 py-3 text-center font-semibold text-xs border-l border-blue-400" rowspan="2">Nilai<br>
+          Rapor</th>
+         <th class="px-4 py-3 text-center font-semibold text-sm border-l border-blue-400" rowspan="2">Aksi</th>
+        </tr>
+        <tr>
+         <th class="px-2 py-2 text-center font-medium text-xs border-l border-blue-400">1</th>
+         <th class="px-2 py-2 text-center font-medium text-xs">2</th>
+         <th class="px-2 py-2 text-center font-medium text-xs">3</th>
+         <th class="px-2 py-2 text-center font-medium text-xs">4</th>
+         <th class="px-2 py-2 text-center font-medium text-xs">5</th>
+         <th class="px-2 py-2 text-center font-medium text-xs">6</th>
+         <th class="px-2 py-2 text-center font-medium text-xs">7</th>
+         <th class="px-2 py-2 text-center font-medium text-xs">8</th>
+         <th class="px-2 py-2 text-center font-medium text-xs">9</th>
+         <th class="px-2 py-2 text-center font-medium text-xs">10</th>
+         <th class="px-2 py-2 text-center font-medium text-xs">11</th>
+         <th class="px-2 py-2 text-center font-medium text-xs">PTS</th>
+         <th class="px-3 py-2 text-center font-medium text-xs border-l border-blue-400">Non Tes</th>
+         <th class="px-3 py-2 text-center font-medium text-xs">Tes</th>
+        </tr>
+       </thead>
+       <tbody id="gradesTableBody">
+        <tr>
+         <td colspan="22" class="text-center py-12 text-gray-500">Belum ada data siswa. Klik "Tambah Siswa" untuk mulai menginput.</td>
+        </tr>
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div><!-- Add Student Modal -->
+   <div id="addStudentModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+     <h3 class="text-2xl font-bold text-gray-800 mb-6">Tambah Siswa Baru</h3>
+     <form id="addStudentForm" class="space-y-4">
+      <div><label for="studentNIS" class="block text-sm font-semibold text-gray-700 mb-2">NIS (Nomor Induk Siswa)</label> <input type="text" id="studentNIS" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition-colors">
+      </div>
+      <div><label for="studentName" class="block text-sm font-semibold text-gray-700 mb-2">Nama Lengkap Siswa</label> <input type="text" id="studentName" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition-colors">
+      </div>
+      <div class="flex gap-3 pt-4"><button type="button" id="cancelStudentBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors"> Batal </button> <button type="submit" id="saveStudentBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"> Simpan </button>
+      </div>
+     </form>
+    </div>
+   </div><!-- Password Modal -->
+   <div id="passwordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+     <h3 class="text-2xl font-bold text-gray-800 mb-4">🔒 Masukkan Password</h3>
+     <p class="text-gray-600 mb-6">Password diperlukan untuk membuka kelas ini</p>
+     <form id="passwordForm" class="space-y-4">
+      <div><label for="classPassword" class="block text-sm font-semibold text-gray-700 mb-2">Password Kelas</label> <input type="password" id="classPassword" placeholder="Masukkan password" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition-colors">
+      </div>
+      <div id="passwordError" class="text-red-500 text-sm hidden">
+       ❌ Password salah, coba lagi!
+      </div>
+      <div class="flex gap-3"><button type="button" id="cancelPasswordBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors"> Batal </button> <button type="submit" id="submitPasswordBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"> Buka Kelas </button>
+      </div>
+     </form>
+    </div>
+   </div><!-- Import Data Modal -->
+   <div id="importModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 max-h-[90vh] overflow-y-auto">
+     <h3 class="text-2xl font-bold text-gray-800 mb-4">📤 Import Data dari Excel</h3>
+     <p class="text-gray-600 mb-6">Upload file XLSX yang sudah diisi dengan data siswa dan nilai</p>
+     <div class="mb-6">
+      <div class="bg-blue-50 border-2 border-blue-200 border-dashed rounded-lg p-6 text-center"><input type="file" id="fileInput" accept=".xlsx,.xls" class="hidden"> <label for="fileInput" class="cursor-pointer">
+        <div class="text-4xl mb-2">
+         📁
+        </div>
+        <div class="text-blue-600 font-semibold mb-1">
+         Klik untuk pilih file Excel
+        </div>
+        <div class="text-sm text-gray-500">
+         Format: XLSX/XLS
+        </div></label>
+      </div>
+      <div id="fileName" class="text-sm text-gray-600 mt-2 text-center font-semibold"></div>
+     </div>
+     <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+      <h4 class="font-semibold text-yellow-800 mb-3 flex items-center gap-2"><span class="text-xl">📋</span> Format File Excel:</h4>
+      <div class="text-sm text-yellow-700 space-y-2">
+       <p class="font-semibold">Kolom yang WAJIB ada (urutan harus sesuai):</p>
+       <div class="bg-white bg-opacity-50 rounded p-3 space-y-1">
+        <p>• <strong>Kolom A:</strong> NIS</p>
+        <p>• <strong>Kolom B:</strong> Nama Siswa</p>
+        <p>• <strong>Kolom C-M:</strong> SUM1, SUM2, SUM3, SUM4, SUM5, SUM6, SUM7, SUM8, SUM9, SUM10, SUM11</p>
+        <p>• <strong>Kolom N:</strong> PTS</p>
+        <p>• <strong>Kolom O:</strong> Non Tes</p>
+        <p>• <strong>Kolom P:</strong> Tes</p>
+       </div>
+       <p class="mt-2"><strong>💡 Tips:</strong></p>
+       <ul class="ml-4 space-y-1">
+        <li>✓ Baris 1: Header (akan dilewati)</li>
+        <li>✓ Baris 2 dst: Data siswa dan nilai</li>
+        <li>✓ Nilai kosong akan otomatis diisi 0</li>
+        <li>✓ Nilai harus berupa angka (0-100)</li>
+       </ul>
+      </div>
+     </div>
+     <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+      <h4 class="font-semibold text-green-800 mb-2 flex items-center gap-2"><span class="text-xl">💡</span> Cara Mudah Import:</h4>
+      <ol class="text-sm text-green-700 space-y-1 ml-5 list-decimal">
+       <li>Klik "Download Template" untuk dapat file contoh</li>
+       <li>Buka template di Excel/Google Sheets</li>
+       <li>Isi data NIS, Nama, dan semua Nilai</li>
+       <li>Simpan file dalam format XLSX</li>
+       <li>Upload file di sini</li>
+      </ol>
+     </div>
+     <div class="flex gap-3"><button type="button" id="cancelImportBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors"> Batal </button> <button type="button" id="processImportBtn" disabled class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"> Upload &amp; Import </button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+        // Initialize Supabase Client
+        const SUPABASE_URL = 'https://qjjvbfsaeatsskbtywyw.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqanZiZnNhZWF0c3NrYnR5d3l3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjcwMTcsImV4cCI6MjA4MDgwMzAxN30.gOKS1GTvQFJKLYAEgr-06n_H4zTPEswRV7y4hv-ao28';
+        
+        // Create or reuse a single global Supabase client instance to avoid redeclaration errors
+       if (!window.__supabase_client) {
+       window.__supabase_client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+       }
+       const supabase = window.__supabase_client;
+        
+        let allData = [];
+        let currentClassId = null;
+        let classMetadata = {};
+        let saveTimeout = null;
+        let pendingClassId = null;
+        
+        // Load class metadata from Supabase
+        async function loadClassMetadata() {
+            try {
+                const { data, error } = await supabase
+                    .from('student_grades')
+                    .select('class_id, class_name, created_at')
+                    .order('created_at', { ascending: true });
+                
+                if (error) {
+                    console.error('Error loading class metadata:', error);
+                    throw error;
+                }
+                
+                console.log('Raw data from Supabase:', data);
+                
+                const uniqueClasses = {};
+                if (data && data.length > 0) {
+                    data.forEach(record => {
+                        console.log('Processing record:', record);
+                        if (record.class_id && record.class_name && !uniqueClasses[record.class_id]) {
+                            const parts = record.class_name.split(' - ');
+                            uniqueClasses[record.class_id] = {
+                                name: parts[0] || record.class_name,
+                                subject: parts[1] || 'Mata Pelajaran'
+                            };
+                            console.log('Added class:', record.class_id, uniqueClasses[record.class_id]);
+                        }
+                    });
+                }
+                
+                classMetadata = uniqueClasses;
+                console.log('Final class metadata:', classMetadata);
+                console.log('Total classes found:', Object.keys(classMetadata).length);
+                
+                return classMetadata;
+            } catch (error) {
+                console.error('Error loading class metadata:', error);
+                classMetadata = {};
+                return classMetadata;
+            }
+        }
+        
+        // Session Management - Improved to persist data properly
+        function saveSession() {
+            const sessionData = {
+                currentClassId: currentClassId,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('appSession', JSON.stringify(sessionData));
+            console.log('Session saved:', sessionData);
+        }
+        
+        function loadSession() {
+            const saved = localStorage.getItem('appSession');
+            if (saved) {
+                try {
+                    const sessionData = JSON.parse(saved);
+                    // Keep session for 7 days instead of 1 day
+                    if (Date.now() - sessionData.timestamp < 7 * 24 * 60 * 60 * 1000) {
+                        console.log('Session loaded:', sessionData);
+                        return sessionData.currentClassId;
+                    }
+                } catch (e) {
+                    console.error('Error loading session:', e);
+                }
+            }
+            return null;
+        }
+        
+        function clearSession() {
+            localStorage.removeItem('appSession');
+            console.log('Session cleared');
+        }
+        
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+        
+        function showSaveIndicator(status) {
+            const indicator = document.getElementById('saveIndicator');
+            const text = document.getElementById('saveText');
+            
+            indicator.className = 'save-indicator';
+            
+            if (status === 'saving') {
+                indicator.classList.add('saving');
+                text.textContent = 'Menyimpan...';
+            } else if (status === 'saved') {
+                indicator.classList.add('saved');
+                text.textContent = '✓ Tersimpan';
+                setTimeout(() => {
+                    indicator.classList.remove('saved');
+                }, 2000);
+            } else if (status === 'error') {
+                indicator.classList.add('error');
+                text.textContent = '✕ Gagal';
+                setTimeout(() => {
+                    indicator.classList.remove('error');
+                }, 3000);
+            }
+        }
+        
+        async function loadAllData() {
+            try {
+                await loadClassMetadata();
+                
+                const { data, error } = await supabase
+                    .from('student_grades')
+                    .select('*')
+                    .order('created_at', { ascending: true });
+                
+                if (error) throw error;
+                
+                allData = data || [];
+                console.log('Data loaded:', allData.length, 'records');
+                
+                // Don't render here, let the caller decide what to render
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showToast('Gagal memuat data: ' + error.message, 'error');
+            }
+        }
+        
+        async function initApp() {
+            showLoading();
+            
+            try {
+                // Always load all data first
+                await loadAllData();
+                
+                console.log('After loadAllData - classMetadata:', classMetadata);
+                console.log('After loadAllData - allData length:', allData.length);
+                
+                // After loading data, check if there's a saved session
+                const savedClassId = loadSession();
+                console.log('Checking saved session:', savedClassId);
+                console.log('Available classes:', Object.keys(classMetadata));
+                
+                if (savedClassId && classMetadata[savedClassId]) {
+                    currentClassId = savedClassId;
+                    
+                    const meta = classMetadata[currentClassId];
+                    document.getElementById('currentClassName').textContent = meta.name;
+                    document.getElementById('currentSubject').textContent = meta.subject;
+                    document.getElementById('dashboardView').classList.add('hidden');
+                    document.getElementById('inputView').classList.remove('hidden');
+                    
+                    renderGradesTable();
+                } else {
+                    // Show dashboard if no valid session
+                    document.getElementById('dashboardView').classList.remove('hidden');
+                    document.getElementById('inputView').classList.add('hidden');
+                    renderClassList();
+                }
+                
+            } catch (error) {
+                console.error('Error in initApp:', error);
+                showToast('Gagal memuat aplikasi: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+                setupEventListeners();
+            }
+        }
+        
+        function setupEventListeners() {
+            document.getElementById('addClassForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await handleAddClass();
+            });
+            
+            document.getElementById('backBtn').addEventListener('click', () => {
+                currentClassId = null;
+                clearSession();
+                document.getElementById('dashboardView').classList.remove('hidden');
+                document.getElementById('inputView').classList.add('hidden');
+                renderClassList();
+            });
+            
+            document.getElementById('addStudentBtn').addEventListener('click', () => {
+                document.getElementById('addStudentModal').classList.remove('hidden');
+                document.getElementById('studentNIS').focus();
+            });
+            
+            document.getElementById('cancelStudentBtn').addEventListener('click', () => {
+                document.getElementById('addStudentModal').classList.add('hidden');
+                document.getElementById('addStudentForm').reset();
+            });
+            
+            document.getElementById('addStudentForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await handleAddStudent();
+            });
+            
+            document.getElementById('exportBtn').addEventListener('click', handleExport);
+            
+            document.getElementById('downloadTemplateBtn').addEventListener('click', downloadTemplate);
+            
+            document.getElementById('importBtn').addEventListener('click', () => {
+                document.getElementById('importModal').classList.remove('hidden');
+                document.getElementById('fileInput').value = '';
+                document.getElementById('fileName').textContent = '';
+                document.getElementById('processImportBtn').disabled = true;
+            });
+            
+            document.getElementById('cancelImportBtn').addEventListener('click', () => {
+                document.getElementById('importModal').classList.add('hidden');
+            });
+            
+            document.getElementById('fileInput').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    document.getElementById('fileName').textContent = `✅ File terpilih: ${file.name}`;
+                    document.getElementById('processImportBtn').disabled = false;
+                } else {
+                    document.getElementById('fileName').textContent = '';
+                    document.getElementById('processImportBtn').disabled = true;
+                }
+            });
+            
+            document.getElementById('processImportBtn').addEventListener('click', handleImport);
+            
+            document.getElementById('cancelPasswordBtn').addEventListener('click', () => {
+                document.getElementById('passwordModal').classList.add('hidden');
+                document.getElementById('classPassword').value = '';
+                document.getElementById('passwordError').classList.add('hidden');
+                pendingClassId = null;
+            });
+            
+            document.getElementById('passwordForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                checkPassword();
+            });
+        }
+        
+        async function handleAddClass() {
+            const className = document.getElementById('className').value.trim();
+            const subjectName = document.getElementById('subjectName').value.trim();
+            
+            if (!className || !subjectName) return;
+            
+            const btn = document.getElementById('addClassBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+            
+            try {
+                const classId = `class_${Date.now()}`;
+                
+                const placeholderStudent = {
+                    class_id: classId,
+                    class_name: `${className} - ${subjectName}`,
+                    nis: 'PLACEHOLDER',
+                    student_name: 'Data akan ditambahkan',
+                    sum1: 0, sum2: 0, sum3: 0, sum4: 0, sum5: 0, sum6: 0,
+                    sum7: 0, sum8: 0, sum9: 0, sum10: 0, sum11: 0,
+                    pts: 0, non_tes: 0, tes: 0
+                };
+                
+                const { data, error } = await supabase
+                    .from('student_grades')
+                    .insert([placeholderStudent])
+                    .select();
+                
+                if (error) throw error;
+                
+                allData.push(data[0]);
+                
+                classMetadata[classId] = {
+                    name: className,
+                    subject: subjectName
+                };
+                
+                document.getElementById('addClassForm').reset();
+                showToast(`✅ Kelas ${className} - ${subjectName} berhasil ditambahkan!`, "success");
+                
+                // Reload data from database to ensure consistency
+                await loadAllData();
+                
+                // Re-render the class list
+                renderClassList();
+                
+            } catch (error) {
+                console.error('Error adding class:', error);
+                showToast("Gagal menambahkan kelas: " + error.message, "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+        
+        function renderClassList() {
+            const classList = document.getElementById('classList');
+            const classes = Object.keys(classMetadata);
+            
+            if (classes.length === 0) {
+                classList.innerHTML = `
+                    <div class="text-center py-12 text-gray-500 col-span-full">
+                        Belum ada kelas. Silakan tambahkan kelas baru di atas.
+                    </div>
+                `;
+                return;
+            }
+            
+            classList.innerHTML = classes.map(classId => {
+                const meta = classMetadata[classId];
+                const studentCount = allData.filter(d => d.class_id === classId).length;
+                
+                return `
+                    <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-6 text-white shadow-lg hover:shadow-2xl transition-all hover:scale-105 relative">
+                        <button onclick="deleteClass('${classId}'); event.stopPropagation();" 
+                            class="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full font-bold transition-colors z-10">
+                            ✕
+                        </button>
+                        <div onclick="openClass('${classId}')" class="cursor-pointer">
+                            <h3 class="text-xl font-bold mb-2 pr-8">${meta.name}</h3>
+                            <p class="text-blue-100 text-sm mb-4">${meta.subject}</p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm opacity-90">👥 ${studentCount} siswa</span>
+                                <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-xs font-semibold">Buka →</span>
+                            </div>
                         </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        window.openClass = function(classId) {
+            pendingClassId = classId;
+            const passwordModal = document.getElementById('passwordModal');
+            passwordModal.classList.remove('hidden');
+            document.getElementById('classPassword').value = '';
+            document.getElementById('passwordError').classList.add('hidden');
+            setTimeout(() => {
+                document.getElementById('classPassword').focus();
+            }, 100);
+        };
+        
+        function checkPassword() {
+            const passwordInput = document.getElementById('classPassword');
+            const errorDiv = document.getElementById('passwordError');
+            const enteredPassword = passwordInput.value;
+            
+            if (enteredPassword === '4m1n4lone') {
+                document.getElementById('passwordModal').classList.add('hidden');
+                
+                currentClassId = pendingClassId;
+                const meta = classMetadata[currentClassId];
+                
+                document.getElementById('currentClassName').textContent = meta.name;
+                document.getElementById('currentSubject').textContent = meta.subject;
+                
+                document.getElementById('dashboardView').classList.add('hidden');
+                document.getElementById('inputView').classList.remove('hidden');
+                
+                saveSession();
+                
+                renderGradesTable();
+                showToast('✅ Kelas berhasil dibuka!', 'success');
+                
+                pendingClassId = null;
+            } else {
+                errorDiv.classList.remove('hidden');
+                passwordInput.value = '';
+                passwordInput.focus();
+                
+                passwordInput.style.animation = 'shake 0.5s';
+                setTimeout(() => {
+                    passwordInput.style.animation = '';
+                }, 500);
+            }
+        }
+        
+        window.deleteClass = async function(classId) {
+            const meta = classMetadata[classId];
+            if (!meta) return;
+            
+            const studentsInClass = allData.filter(d => d.class_id === classId);
+            
+            const confirmDelete = document.createElement('div');
+            confirmDelete.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            confirmDelete.innerHTML = `
+                <div class="bg-white rounded-xl p-6 max-w-md mx-4">
+                    <h3 class="text-lg font-bold mb-2 text-gray-800">Konfirmasi Hapus Kelas</h3>
+                    <p class="text-gray-600 mb-2">Yakin ingin menghapus kelas <strong>${meta.name}</strong>?</p>
+                    ${studentsInClass.length > 0 ? `<p class="text-red-600 text-sm mb-4">⚠️ Semua data ${studentsInClass.length} siswa dalam kelas ini akan ikut terhapus!</p>` : '<p class="text-gray-500 text-sm mb-4">Kelas ini tidak memiliki data siswa.</p>'}
+                    <div class="flex gap-3">
+                        <button id="cancelDeleteClass" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded font-semibold transition-colors">Batal</button>
+                        <button id="confirmDeleteClass" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded font-semibold transition-colors">Hapus Kelas</button>
                     </div>
                 </div>
             `;
+            document.body.appendChild(confirmDelete);
             
-            // Attach event listeners
-            document.getElementById('login-form').addEventListener('submit', handleLogin);
-            document.getElementById('register-form').addEventListener('submit', handleSignup);
-        }
-
-        // Handle login
-        async function handleLogin(e) {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email: email,
-                    password: password,
-                });
-
-                if (error) throw error;
-
-                console.log('Login successful:', data.user.email);
-                checkAuth(); // Refresh auth state
-            } catch (error) {
-                alert('Login failed: ' + error.message);
-            }
-        }
-
-        // Handle signup
-        async function handleSignup(e) {
-            e.preventDefault();
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-
-            if (password !== confirmPassword) {
-                alert('Passwords do not match');
+            document.getElementById('cancelDeleteClass').onclick = () => confirmDelete.remove();
+            document.getElementById('confirmDeleteClass').onclick = async () => {
+                const btn = document.getElementById('confirmDeleteClass');
+                btn.disabled = true;
+                btn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+                
+                try {
+                    if (studentsInClass.length > 0) {
+                        const studentIds = studentsInClass.map(s => s.id);
+                        const { error } = await supabase
+                            .from('student_grades')
+                            .delete()
+                            .in('id', studentIds);
+                        
+                        if (error) throw error;
+                        
+                        allData = allData.filter(d => d.class_id !== classId);
+                    }
+                    
+                    delete classMetadata[classId];
+                    
+                    if (currentClassId === classId) {
+                        clearSession();
+                        currentClassId = null;
+                    }
+                    
+                    confirmDelete.remove();
+                    showToast(`Kelas ${meta.name} berhasil dihapus!`, "success");
+                    
+                    await loadAllData();
+                } catch (error) {
+                    console.error('Error deleting class:', error);
+                    confirmDelete.remove();
+                    showToast("Gagal menghapus kelas: " + error.message, "error");
+                }
+            };
+        };
+        
+        function renderGradesTable() {
+            const tbody = document.getElementById('gradesTableBody');
+            const students = allData.filter(d => d.class_id === currentClassId);
+            
+            if (students.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="22" class="text-center py-12 text-gray-500">
+                            Belum ada data siswa. Klik "Tambah Siswa" untuk mulai menginput.
+                        </td>
+                    </tr>
+                `;
                 return;
             }
-
-            try {
-                const { data, error } = await supabase.auth.signUp({
-                    email: email,
-                    password: password,
-                });
-
-                if (error) throw error;
-
-                alert('Signup successful! Please check your email to confirm your account.');
-                toggleSignup({ preventDefault: () => {} }); // Reset form
-            } catch (error) {
-                alert('Signup failed: ' + error.message);
-            }
-        }
-
-        // Toggle between login and signup forms
-        function toggleSignup(e) {
-            if (e) e.preventDefault();
-            const loginForm = document.getElementById('login-form');
-            const signupForm = document.getElementById('signup-form');
             
-            if (loginForm.style.display === 'none') {
-                loginForm.style.display = 'block';
-                signupForm.style.display = 'none';
-            } else {
-                loginForm.style.display = 'none';
-                signupForm.style.display = 'block';
+            students.sort((a, b) => a.student_name.localeCompare(b.student_name, 'id'));
+            
+            tbody.innerHTML = students.map((student, index) => {
+                const sums = [
+                    student.sum1 || 0, student.sum2 || 0, student.sum3 || 0,
+                    student.sum4 || 0, student.sum5 || 0, student.sum6 || 0,
+                    student.sum7 || 0, student.sum8 || 0, student.sum9 || 0,
+                    student.sum10 || 0, student.sum11 || 0
+                ];
+                const pts = student.pts || 0;
+                const nonTes = student.non_tes || 0;
+                const tes = student.tes || 0;
+                
+                const naSumatif = calculateAverage([...sums, pts]);
+                const naAS = calculateAverage([nonTes, tes]);
+                const nilaiRapor = calculateAverage([naSumatif, naAS]);
+                
+                return `
+                    <tr class="border-b hover:bg-blue-50 student-row">
+                        <td class="px-4 py-3 text-center font-medium">${index + 1}</td>
+                        <td class="px-4 py-3 font-medium">${student.nis}</td>
+                        <td class="px-4 py-3 font-medium">${student.student_name}</td>
+                        ${sums.map((val, i) => `
+                            <td class="px-2 py-2 border-l ${i === 0 ? 'border-gray-300' : ''}">
+                                <input type="number" min="0" max="100" value="${val || ''}" 
+                                    class="w-16 px-2 py-1 text-center border border-gray-300 rounded focus:border-blue-500 focus:outline-none input-cell"
+                                    onchange="updateGrade('${student.id}', 'sum${i + 1}', this.value)">
+                            </td>
+                        `).join('')}
+                        <td class="px-2 py-2">
+                            <input type="number" min="0" max="100" value="${pts || ''}" 
+                                class="w-16 px-2 py-1 text-center border border-gray-300 rounded focus:border-blue-500 focus:outline-none input-cell"
+                                onchange="updateGrade('${student.id}', 'pts', this.value)">
+                        </td>
+                        <td class="px-4 py-3 text-center font-bold bg-blue-50 border-l border-gray-300">${naSumatif.toFixed(1)}</td>
+                        <td class="px-3 py-2 border-l border-gray-300">
+                            <input type="number" min="0" max="100" value="${nonTes || ''}" 
+                                class="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:border-blue-500 focus:outline-none input-cell"
+                                onchange="updateGrade('${student.id}', 'non_tes', this.value)">
+                        </td>
+                        <td class="px-3 py-2">
+                            <input type="number" min="0" max="100" value="${tes || ''}" 
+                                class="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:border-blue-500 focus:outline-none input-cell"
+                                onchange="updateGrade('${student.id}', 'tes', this.value)">
+                        </td>
+                        <td class="px-4 py-3 text-center font-bold bg-blue-50 border-l border-gray-300">${naAS.toFixed(1)}</td>
+                        <td class="px-4 py-3 text-center font-bold bg-green-50 border-l border-gray-300 text-lg">${nilaiRapor.toFixed(1)}</td>
+                        <td class="px-4 py-3 text-center border-l border-gray-300">
+                            <button onclick="deleteStudent('${student.id}')" 
+                                class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm font-semibold transition-colors">
+                                Hapus
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function calculateAverage(values) {
+            const validValues = values.filter(v => v > 0);
+            if (validValues.length === 0) return 0;
+            return validValues.reduce((a, b) => a + b, 0) / validValues.length;
+        }
+        
+        window.updateGrade = async function(id, field, value) {
+            const numValue = parseFloat(value) || 0;
+            if (numValue < 0 || numValue > 100) {
+                showToast("Nilai harus antara 0-100", "error");
+                return;
+            }
+            
+            if (saveTimeout) {
+                clearTimeout(saveTimeout);
+            }
+            
+            showSaveIndicator('saving');
+            
+            saveTimeout = setTimeout(async () => {
+                try {
+                    const { error } = await supabase
+                        .from('student_grades')
+                        .update({ [field]: numValue })
+                        .eq('id', id);
+                    
+                    if (error) throw error;
+                    
+                    const student = allData.find(d => d.id === id);
+                    if (student) {
+                        student[field] = numValue;
+                    }
+                    
+                    showSaveIndicator('saved');
+                } catch (error) {
+                    console.error('Error updating grade:', error);
+                    showSaveIndicator('error');
+                    showToast("Gagal menyimpan nilai", "error");
+                }
+            }, 800);
+        };
+        
+        async function handleAddStudent() {
+            const nis = document.getElementById('studentNIS').value.trim();
+            const name = document.getElementById('studentName').value.trim();
+            
+            if (!nis || !name) return;
+            
+            const btn = document.getElementById('saveStudentBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+            
+            try {
+                const newStudent = {
+                    class_id: currentClassId,
+                    class_name: classMetadata[currentClassId].name,
+                    nis: nis,
+                    student_name: name,
+                    sum1: 0, sum2: 0, sum3: 0, sum4: 0, sum5: 0, sum6: 0,
+                    sum7: 0, sum8: 0, sum9: 0, sum10: 0, sum11: 0,
+                    pts: 0, non_tes: 0, tes: 0
+                };
+                
+                const { data, error } = await supabase
+                    .from('student_grades')
+                    .insert([newStudent])
+                    .select();
+                
+                if (error) throw error;
+                
+                allData.push(data[0]);
+                
+                document.getElementById('addStudentModal').classList.add('hidden');
+                document.getElementById('addStudentForm').reset();
+                showToast(`Siswa ${name} berhasil ditambahkan!`, "success");
+                
+                renderGradesTable();
+            } catch (error) {
+                console.error('Error adding student:', error);
+                showToast("Gagal menambahkan siswa: " + error.message, "error");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Simpan';
             }
         }
-
-        // Initialize auth on page load
-        window.addEventListener('load', checkAuth);
+        
+        window.deleteStudent = async function(id) {
+            const student = allData.find(d => d.id === id);
+            if (!student) return;
+            
+            const confirmDelete = document.createElement('div');
+            confirmDelete.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            confirmDelete.innerHTML = `
+                <div class="bg-white rounded-xl p-6 max-w-sm mx-4">
+                    <h3 class="text-lg font-bold mb-2">Konfirmasi Hapus</h3>
+                    <p class="text-gray-600 mb-4">Yakin ingin menghapus siswa ${student.student_name}?</p>
+                    <div class="flex gap-3">
+                        <button id="cancelDelete" class="flex-1 bg-gray-200 hover:bg-gray-300 py-2 px-4 rounded font-semibold">Batal</button>
+                        <button id="confirmDelete" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded font-semibold">Hapus</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(confirmDelete);
+            
+            document.getElementById('cancelDelete').onclick = () => confirmDelete.remove();
+            document.getElementById('confirmDelete').onclick = async () => {
+                try {
+                    const { error } = await supabase
+                        .from('student_grades')
+                        .delete()
+                        .eq('id', id);
+                    
+                    if (error) throw error;
+                    
+                    allData = allData.filter(d => d.id !== id);
+                    confirmDelete.remove();
+                    showToast("Siswa berhasil dihapus", "success");
+                    renderGradesTable();
+                } catch (error) {
+                    console.error('Error deleting student:', error);
+                    confirmDelete.remove();
+                    showToast("Gagal menghapus siswa: " + error.message, "error");
+                }
+            };
+        };
+        
+        function downloadTemplate() {
+            const meta = classMetadata[currentClassId];
+            const wb = XLSX.utils.book_new();
+            
+            const templateData = [
+                ['NIS', 'Nama Siswa', 'SUM1', 'SUM2', 'SUM3', 'SUM4', 'SUM5', 'SUM6', 'SUM7', 'SUM8', 'SUM9', 'SUM10', 'SUM11', 'PTS', 'Non Tes', 'Tes'],
+                ['12345', 'Contoh Siswa 1', 85, 90, 78, 88, 92, 85, 80, 87, 89, 91, 86, 88, 85, 90],
+                ['12346', 'Contoh Siswa 2', 75, 80, 85, 82, 88, 79, 84, 86, 83, 87, 81, 85, 82, 88],
+                ['12347', 'Contoh Siswa 3', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+            ];
+            
+            const ws = XLSX.utils.aoa_to_sheet(templateData);
+            
+            ws['!cols'] = [
+                { wch: 12 }, { wch: 25 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
+                { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
+                { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 8 }
+            ];
+            
+            XLSX.utils.book_append_sheet(wb, ws, "Data Siswa");
+            
+            const fileName = meta ? `Template_${meta.name}_${meta.subject}.xlsx` : 'Template_Import_Nilai.xlsx';
+            XLSX.writeFile(wb, fileName);
+            
+            showToast("✅ Template lengkap berhasil didownload!", "success");
+        }
+        
+        async function handleImport() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showToast("Silakan pilih file terlebih dahulu", "error");
+                return;
+            }
+            
+            const btn = document.getElementById('processImportBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+            
+            try {
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data);
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                const studentData = jsonData.slice(1).filter(row => row[0] && row[1]);
+                
+                if (studentData.length === 0) {
+                    showToast("Tidak ada data siswa yang valid di file", "error");
+                    btn.disabled = false;
+                    btn.textContent = 'Upload & Import';
+                    return;
+                }
+                
+                const existingStudents = allData.filter(d => d.class_id === currentClassId);
+                if (existingStudents.length > 0) {
+                    const studentIds = existingStudents.map(s => s.id);
+                    const { error: deleteError } = await supabase
+                        .from('student_grades')
+                        .delete()
+                        .in('id', studentIds);
+                    
+                    if (deleteError) throw deleteError;
+                    
+                    allData = allData.filter(d => d.class_id !== currentClassId);
+                }
+                
+                const studentsToInsert = studentData.map(row => {
+                    const parseGrade = (val) => {
+                        const num = parseFloat(val);
+                        return (isNaN(num) || num < 0 || num > 100) ? 0 : num;
+                    };
+                    
+                    return {
+                        class_id: currentClassId,
+                        class_name: classMetadata[currentClassId].name,
+                        nis: String(row[0]).trim(),
+                        student_name: String(row[1]).trim(),
+                        sum1: parseGrade(row[2]),
+                        sum2: parseGrade(row[3]),
+                        sum3: parseGrade(row[4]),
+                        sum4: parseGrade(row[5]),
+                        sum5: parseGrade(row[6]),
+                        sum6: parseGrade(row[7]),
+                        sum7: parseGrade(row[8]),
+                        sum8: parseGrade(row[9]),
+                        sum9: parseGrade(row[10]),
+                        sum10: parseGrade(row[11]),
+                        sum11: parseGrade(row[12]),
+                        pts: parseGrade(row[13]),
+                        non_tes: parseGrade(row[14]),
+                        tes: parseGrade(row[15])
+                    };
+                });
+                
+                const { data: insertedData, error } = await supabase
+                    .from('student_grades')
+                    .insert(studentsToInsert)
+                    .select();
+                
+                if (error) throw error;
+                
+                allData.push(...insertedData);
+                
+                btn.disabled = false;
+                btn.textContent = 'Upload & Import';
+                document.getElementById('importModal').classList.add('hidden');
+                
+                showToast(`✅ Data lama diganti! Berhasil import ${insertedData.length} siswa baru!`, "success");
+                renderGradesTable();
+                
+            } catch (error) {
+                console.error('Error importing:', error);
+                showToast("Gagal import data: " + error.message, "error");
+                btn.disabled = false;
+                btn.textContent = 'Upload & Import';
+            }
+        }
+        
+        function handleExport() {
+            const students = allData.filter(d => d.class_id === currentClassId);
+            if (students.length === 0) {
+                showToast("Tidak ada data untuk diekspor", "error");
+                return;
+            }
+            
+            const meta = classMetadata[currentClassId];
+            
+            const wb = XLSX.utils.book_new();
+            const data = [];
+            
+            data.push([`Sekolah: SMK Negeri 4 Jakarta`]);
+            data.push([`Tahun Pelajaran: 2025/2026`]);
+            data.push([`Kelas: ${meta.name}`]);
+            data.push([`Mata Pelajaran: ${meta.subject}`]);
+            data.push([]);
+            
+            data.push([
+                'No', 'NIS', 'Nama Siswa',
+                'SUM1', 'SUM2', 'SUM3', 'SUM4', 'SUM5', 'SUM6',
+                'SUM7', 'SUM8', 'SUM9', 'SUM10', 'SUM11', 'PTS',
+                'NA Sumatif', 'Non Tes', 'Tes', 'NA AS', 'Nilai Rapor'
+            ]);
+            
+            students.forEach((student, index) => {
+                const sums = [
+                    student.sum1 || 0, student.sum2 || 0, student.sum3 || 0,
+                    student.sum4 || 0, student.sum5 || 0, student.sum6 || 0,
+                    student.sum7 || 0, student.sum8 || 0, student.sum9 || 0,
+                    student.sum10 || 0, student.sum11 || 0
+                ];
+                const pts = student.pts || 0;
+                const nonTes = student.non_tes || 0;
+                const tes = student.tes || 0;
+                
+                const naSumatif = calculateAverage([...sums, pts]);
+                const naAS = calculateAverage([nonTes, tes]);
+                const nilaiRapor = calculateAverage([naSumatif, naAS]);
+                
+                data.push([
+                    index + 1,
+                    student.nis,
+                    student.student_name,
+                    ...sums,
+                    pts,
+                    parseFloat(naSumatif.toFixed(1)),
+                    nonTes,
+                    tes,
+                    parseFloat(naAS.toFixed(1)),
+                    parseFloat(nilaiRapor.toFixed(1))
+                ]);
+            });
+            
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            
+            ws['!cols'] = [
+                { wch: 5 }, { wch: 12 }, { wch: 25 },
+                ...Array(12).fill({ wch: 8 }),
+                { wch: 12 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 12 }
+            ];
+            
+            XLSX.utils.book_append_sheet(wb, ws, "Data Nilai");
+            XLSX.writeFile(wb, `Rapor_${meta.name}_${meta.subject}.xlsx`);
+            
+            showToast("✅ Data berhasil diekspor ke Excel!", "success");
+        }
+        
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        initApp();
     </script>
-</body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b901221d6baea86',t:'MTc2NzU4NTY0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
